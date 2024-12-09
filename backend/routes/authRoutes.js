@@ -8,24 +8,26 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET; // Load secret from .env
 
 const authenticateToken = require('../middleware/authenticateToken'); // Middleware for secured access
+const authorizeRole = require('../middleware/authorizeRole');
 
 
 // Register route
 router.post('/api/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, role='user' } = req.body;
     
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ message: 'Email already registered' });
         
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, email, password: hashedPassword });
+        const newUser = new User({ name, email, password: hashedPassword, role });
         await newUser.save();
         
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
+        console.log('Request Body->', req.body);        
         console.error('Error during registration',error);
-        
+        console.error('Error->',error);        
         res.status(500).json({ message: 'Error registering user', error: error.message });
     }
 });
@@ -56,7 +58,7 @@ router.post('/api/login', async (req, res) => {
 });
 
 // Fetch all users route
-router.get('/api/users', authenticateToken, async (req, res) => {
+router.get('/api/users', authenticateToken,authorizeRole('admin'), async (req, res) => {
     try {
         // Retrieve all users except passwords
         const users = await User.find({}, '-password'); // Exclude the password field
@@ -67,3 +69,16 @@ router.get('/api/users', authenticateToken, async (req, res) => {
     }
 });
 module.exports = router;
+
+// Delete user (admin-only)
+router.delete('/api/users/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        await User.findByIdAndDelete(userId);
+        res.status(200).json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ message: 'Error deleting user', error: error.message });
+    }
+});
