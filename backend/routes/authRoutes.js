@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Import User schema
+const validator = require('validator');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET; // Load secret from .env
@@ -18,7 +19,12 @@ router.post('/api/register', async (req, res) => {
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ message: 'Email already registered' });
-        
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({ message: 'Email format is invalid' });
+        }
+        if (password.length < 10) {
+            return res.status(400).json({ message: 'Password must be at least 10 charecters' });
+        }
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ name, email, password: hashedPassword, role });
         await newUser.save();
