@@ -11,9 +11,18 @@ const JWT_SECRET = process.env.JWT_SECRET; // Load secret from .env
 const authenticateToken = require('../middleware/authenticateToken'); // Middleware for secured access
 const authorizeRole = require('../middleware/authorizeRole');
 
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter for login and registration
+const authRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 requests per windowMs
+    message: 'Too many attempts, please try again after 15 minutes',
+});
+
 
 // Register route
-router.post('/api/register', async (req, res) => {
+router.post('/api/register',authRateLimiter, async (req, res) => {
     const { name, email, password, role='user' } = req.body;
     
     try {
@@ -39,7 +48,7 @@ router.post('/api/register', async (req, res) => {
 });
 
 // Login route
-router.post('/api/login', async (req, res) => {
+router.post('/api/login',authRateLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     try {
