@@ -22,28 +22,49 @@ const authRateLimiter = rateLimit({
 
 
 // Register route
-router.post('/api/register',authRateLimiter, async (req, res) => {
-    const { name, email, password, role='user' } = req.body;
-    
+router.post('/api/register', authRateLimiter, async (req, res) => {
+    const { name, email, password, role = 'user' } = req.body;
+
     try {
+        // Check if user already exists
         const existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(400).json({ message: 'Email already registered' });
+        if (existingUser) {
+            return res.status(400).json({
+                message: 'Registration failed',
+                error: 'Email already registered',
+            });
+        }
+
+        // Validate email format
         if (!validator.isEmail(email)) {
-            return res.status(400).json({ message: 'Email format is invalid' });
+            return res.status(400).json({
+                message: 'Registration failed',
+                error: 'Invalid email format',
+            });
         }
+
+        // Validate password strength
         if (password.length < 10) {
-            return res.status(400).json({ message: 'Password must be at least 10 charecters' });
+            return res.status(400).json({
+                message: 'Registration failed',
+                error: 'Password must be at least 10 characters long',
+            });
         }
+
+        // Hash the password and create the user
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ name, email, password: hashedPassword, role });
         await newUser.save();
-        
+
+        // Send success response
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
-        console.log('Request Body->', req.body);        
-        console.error('Error during registration',error);
-        console.error('Error->',error);        
-        res.status(500).json({ message: 'Error registering user', error: error.message });
+        // Handle unexpected errors
+        console.error('Error during registration:', error);
+        res.status(500).json({
+            message: 'Registration failed',
+            error: 'An unexpected error occurred. Please try again later.',
+        });
     }
 });
 
