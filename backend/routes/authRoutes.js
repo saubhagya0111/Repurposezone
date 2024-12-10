@@ -59,7 +59,7 @@ router.post('/api/login',authRateLimiter, async (req, res) => {
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid email or password' });
         
         // console.error('JWT_Secret=', process.env.JWT_SECRET);
-        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET.trim(), { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, email: user.email, role:user.role }, JWT_SECRET.trim(), { expiresIn: '1h' });
         
         // console.log('JWT token=',token);
         
