@@ -5,6 +5,7 @@ const authRoutes = require('./routes/authRoutes');
 const protectedRoutes = require('./routes/protectedRoutes');
 const connectDB = require('./db');
 const healthCheckRoutes = require('./routes/healthCheck');
+const scrapeRoutes = require('./routes/scrapeRoutes');
 
 const app = express();
 connectDB()
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(authRoutes);
 app.use(protectedRoutes);
 app.use('/api', healthCheckRoutes);
+app.use('/api/scrape', scrapeRoutes);
 app.get('/', (req, res) => {
     res.send('Backend is running');
 });
