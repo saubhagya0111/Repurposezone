@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,14 +17,11 @@ export default function Dashboard() {
         console.log("Fetched Users Data:", res.data.users); // Log the response data
         setUserData(res.data.users);
       } catch (error) {
-        let errorMessage = 'Failed to do something exceptional';
+        let errorMessage = "Failed to do something exceptional";
         if (error instanceof Error) {
-          errorMessage = error.message;          
+          errorMessage = error.message;
         }
-        console.error(
-          "Error fetching users data:",
-          errorMessage
-        );
+        console.error("Error fetching users data:", errorMessage);
         router.push("/auth/login"); // Redirect to login if unauthorized
       }
     };
