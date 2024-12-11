@@ -41,7 +41,7 @@ async function simulateUserBehavior(driver) {
     const maxScrollHeight = await driver.executeScript('return document.body.scrollHeight');
     const randomScroll = Math.floor(Math.random() * maxScrollHeight);
     await driver.executeScript(`window.scrollTo(0, ${randomScroll});`);
-    await randomDelay(500, 10000); // Short pause to mimic human behavior
+    await randomDelay(500, 6000); // Short pause to mimic human behavior
 
     // Simulate random mouse movements
     const actions = driver.actions({ bridge: true });
@@ -53,11 +53,18 @@ async function simulateUserBehavior(driver) {
 // Scrape tweet data
 async function scrapeTweet(tweetUrl) {
     try {
+        // Check cache first
+        if (tweetCache[tweetUrl]) {
+            logTraffic(`Cache hit for: ${tweetUrl}`);
+            return tweetCache[tweetUrl];
+        }
         const browser = await initDriver();
 
         logTraffic(`Requesting: ${tweetUrl}`);
         await browser.get(tweetUrl);
 
+        // Simulate human-like scrolling
+        await browser.executeScript('window.scrollTo(0, document.body.scrollHeight);');
         // Simulate human behavior
         await simulateUserBehavior(browser);
         await randomDelay(2000, 3000);
@@ -84,9 +91,9 @@ async function scrapeTweet(tweetUrl) {
             mediaLinks.push(await media.getAttribute('src'));
         }
 
-        // Locate author's handle
-        const authorElement = await browser.findElement(By.css('a[href^="/"][href*="/status/"] span'));
-        const authorHandle = await authorElement.getText();
+        // // Locate author's handle
+        // const authorElement = await browser.findElement(By.css('a[href^="/"][href*="/status/"] span'));
+        // const authorHandle = await authorElement.getText();
 
         // Locate timestamp
         const timestampElement = await browser.findElement(By.css('time'));
@@ -99,7 +106,6 @@ async function scrapeTweet(tweetUrl) {
         const result = {
             text: tweetText.trim(),
             media: mediaLinks,
-            author: authorHandle,
             timestamp: timestamp || null,
         };
         tweetCache[tweetUrl] = result;
