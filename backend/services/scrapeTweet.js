@@ -1,43 +1,38 @@
 const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const UserAgent = require('user-agents');
 const fs = require('fs');
 
-// Traffic monitoring log file
+// Log file for monitoring
 const trafficLog = 'traffic.log';
+const cacheFile = 'tweetCache.json'; // Cache file for tweets
 
-// Random delay function to mimic human behavior
+// Initialize cache
+let tweetCache = fs.existsSync(cacheFile) ? JSON.parse(fs.readFileSync(cacheFile)) : {};
+
+// Random delay to mimic human behavior
 function randomDelay(min, max) {
     const ms = Math.floor(Math.random() * (max - min + 1)) + min;
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Append logs to traffic.log
+// Append logs to file
 function logTraffic(message) {
     const timestamp = new Date().toISOString();
     fs.appendFileSync(trafficLog, `[${timestamp}] ${message}\n`);
 }
 
+// Save cache to file
+function saveCache() {
+    fs.writeFileSync(cacheFile, JSON.stringify(tweetCache, null, 2));
+}
+
 // Initialize Selenium driver
 let driver;
-async function initDriver(proxy = null) {
+async function initDriver() {
     if (!driver) {
-        const userAgent = new UserAgent();
         const options = new chrome.Options();
-        options.addArguments('--headless'); // Run in headless mode
-        options.addArguments('--disable-gpu'); // Disable GPU for performance
-        options.addArguments('--no-sandbox'); // Bypass OS-level sandboxing
-        options.addArguments(`--user-agent=${userAgent.toString()}`); // Random User-Agent
-
-        // Add proxy if provided
-        if (proxy) {
-            options.addArguments(`--proxy-server=${proxy}`);
-        }
-
-        driver = await new Builder()
-            .forBrowser('chrome')
-            .setChromeOptions(options)
-            .build();
+        options.addArguments('--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage');
+        driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
     }
     return driver;
 }
@@ -45,62 +40,71 @@ async function initDriver(proxy = null) {
 // Scrape tweet data
 async function scrapeTweet(tweetUrl) {
     try {
+        // Check cache first
+        if (tweetCache[tweetUrl]) {
+            logTraffic(`Cache hit for: ${tweetUrl}`);
+            return tweetCache[tweetUrl];
+        }
+
         const browser = await initDriver();
 
-        // Log request
         logTraffic(`Requesting: ${tweetUrl}`);
-
-        // Open the tweet URL
         await browser.get(tweetUrl);
 
-        // Simulate human-like scrolling behavior
+        // Simulate human-like scrolling
         await browser.executeScript('window.scrollTo(0, document.body.scrollHeight);');
-        await randomDelay(3000, 5000); // Wait between 2-5 seconds randomly
+        await randomDelay(2000, 3000);
 
-        // Wait for the tweet text to load
+        // Check for common issues before locating elements
+        const pageSource = await browser.getPageSource();
+        if (pageSource.includes('Something went wrong')) {
+            throw new Error(
+                'Tweet is not accessible. Possible reasons: 1. The tweet has been deleted. 2. The tweet is private or restricted.'
+            );
+        }
+
+        // Locate tweet text dynamically
         const tweetTextElement = await browser.wait(
             until.elementLocated(By.css('[data-testid="tweetText"]')),
-            10000 // Wait up to 10 seconds
+            10000
         );
         const tweetText = await tweetTextElement.getText();
 
-        // Extract media links (if any)
+        // Locate media links
         const mediaElements = await browser.findElements(By.css('[data-testid="tweetPhoto"] img'));
         const mediaLinks = [];
-        for (let media of mediaElements) {
+        for (const media of mediaElements) {
             mediaLinks.push(await media.getAttribute('src'));
         }
 
-        // Extract the timestamp of the tweet
+        // Locate author's handle
+        const authorElement = await browser.findElement(By.css('a[href^="/"][href*="/status/"] span'));
+        const authorHandle = await authorElement.getText();
+
+        // Locate timestamp
         const timestampElement = await browser.findElement(By.css('time'));
         const timestamp = await timestampElement.getAttribute('datetime');
 
-        // Log success
+        // Success log
         logTraffic(`Success: Scraped tweet from ${tweetUrl}`);
 
-        // Return the extracted data
-        return {
+        // Cache the result
+        const result = {
             text: tweetText.trim(),
             media: mediaLinks,
-            timestamp: timestamp || null, // UTC timestamp (if available)
+            timestamp: timestamp || null,
         };
+        tweetCache[tweetUrl] = result;
+        saveCache();
+
+        return result;
     } catch (error) {
-        // Log error
         logTraffic(`Error: Failed to scrape ${tweetUrl}. Reason: ${error.message}`);
-
-        // Retry logic for temporary issues
-        if (error.message.includes('CAPTCHA') || error.message.includes('network error')) {
-            console.warn('Temporary error detected. Retrying...');
-            await randomDelay(10000, 15000); // Wait 10-15 seconds before retrying
-            return scrapeTweet(tweetUrl);
-        }
-
-        throw new Error(`Failed to scrape tweet. ${error.message}`);
+        throw new Error(error.message);
     }
 }
 
-
-// Close the driver when finished
+// Close driver
 async function closeDriver() {
     if (driver) {
         await driver.quit();
@@ -109,7 +113,6 @@ async function closeDriver() {
     }
 }
 
-// Export the scraper and cleanup function
 module.exports = {
     scrapeTweet,
     closeDriver,
