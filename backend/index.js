@@ -6,6 +6,8 @@ const protectedRoutes = require('./routes/protectedRoutes');
 const connectDB = require('./db');
 const healthCheckRoutes = require('./routes/healthCheck');
 const scrapeRoutes = require('./routes/scrapeRoutes');
+const passport = require('./config/passport');
+const session = require('express-session');
 
 const app = express();
 connectDB()
@@ -13,10 +15,20 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
+// Add session middleware
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET, // Load from .env
+        resave: false,
+        saveUninitialized: false,
+    })
+);
 app.use(express.json());
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
-app.use(authRoutes);
+app.use('/', authRoutes);
 app.use(protectedRoutes);
 app.use('/api', healthCheckRoutes);
 app.use('/api/scrape', scrapeRoutes);

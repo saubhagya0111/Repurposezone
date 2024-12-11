@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Import User schema
 const validator = require('validator');
+const passport = require('../config/passport');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET; // Load secret from .env
@@ -118,3 +119,21 @@ router.delete('/api/users/:id', authenticateToken, authorizeRole('admin'), async
         res.status(500).json({ message: 'Error deleting user', error: error.message });
     }
 });
+
+// Redirect user to Twitter login
+router.get('/auth/twitter', passport.authenticate('twitter'));
+
+// Handle Twitter OAuth callback
+router.get(
+    '/auth/twitter/callback',
+    passport.authenticate('twitter', {
+        failureRedirect: '/login', // Redirect if login fails
+    }),
+    (req, res) => {
+        // Successful login, send user info
+        res.json({
+            message: 'Logged in successfully!',
+            user: req.user, // Contains Twitter user data
+        });
+    }
+);
