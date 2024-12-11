@@ -17,7 +17,7 @@ const rateLimit = require('express-rate-limit');
 // Rate limiter for login and registration
 const authRateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 8, // Limit each IP to 10 requests per windowMs
+    max: 10, // Limit each IP to 10 requests per windowMs
     message: 'Too many attempts, please try again after 15 minutes',
 });
 
@@ -125,15 +125,20 @@ router.get('/auth/twitter', passport.authenticate('twitter'));
 
 // Handle Twitter OAuth callback
 router.get(
-    '/auth/twitter/callback',
-    passport.authenticate('twitter', {
-        failureRedirect: '/login', // Redirect if login fails
-    }),
-    (req, res) => {
-        // Successful login, send user info
-        res.json({
-            message: 'Logged in successfully!',
-            user: req.user, // Contains Twitter user data
-        });
+    '/auth/twitter/callback', authRateLimiter,
+    passport.authenticate('twitter', { failureRedirect: '/login' }),
+    async (req, res) => {
+        try {
+            const user = req.user;
+
+            if (!user) {
+                return res.status(400).json({ error: 'Twitter authentication failed' });
+            }
+
+            res.json({ message: 'Logged in successfully!', user });
+        } catch (error) {
+            console.error('Error during Twitter OAuth:', error.message);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 );
