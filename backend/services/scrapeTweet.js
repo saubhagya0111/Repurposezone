@@ -36,26 +36,33 @@ async function initDriver() {
     }
     return driver;
 }
+async function simulateUserBehavior(driver) {
+    // Randomly scroll up and down the page
+    const maxScrollHeight = await driver.executeScript('return document.body.scrollHeight');
+    const randomScroll = Math.floor(Math.random() * maxScrollHeight);
+    await driver.executeScript(`window.scrollTo(0, ${randomScroll});`);
+    await randomDelay(500, 10000); // Short pause to mimic human behavior
 
+    // Simulate random mouse movements
+    const actions = driver.actions({ bridge: true });
+    const randomX = Math.floor(Math.random() * 800); // Random x-coordinate
+    const randomY = Math.floor(Math.random() * 600); // Random y-coordinate
+    await actions.move({ x: randomX, y: randomY }).perform();
+    await randomDelay(500, 5000);
+}
 // Scrape tweet data
 async function scrapeTweet(tweetUrl) {
     try {
-        // Check cache first
-        if (tweetCache[tweetUrl]) {
-            logTraffic(`Cache hit for: ${tweetUrl}`);
-            return tweetCache[tweetUrl];
-        }
-
         const browser = await initDriver();
 
         logTraffic(`Requesting: ${tweetUrl}`);
         await browser.get(tweetUrl);
 
-        // Simulate human-like scrolling
-        await browser.executeScript('window.scrollTo(0, document.body.scrollHeight);');
+        // Simulate human behavior
+        await simulateUserBehavior(browser);
         await randomDelay(2000, 3000);
 
-        // Check for common issues before locating elements
+        // Check for page-level errors
         const pageSource = await browser.getPageSource();
         if (pageSource.includes('Something went wrong')) {
             throw new Error(
@@ -85,13 +92,14 @@ async function scrapeTweet(tweetUrl) {
         const timestampElement = await browser.findElement(By.css('time'));
         const timestamp = await timestampElement.getAttribute('datetime');
 
-        // Success log
+        // Log success
         logTraffic(`Success: Scraped tweet from ${tweetUrl}`);
 
         // Cache the result
         const result = {
             text: tweetText.trim(),
             media: mediaLinks,
+            author: authorHandle,
             timestamp: timestamp || null,
         };
         tweetCache[tweetUrl] = result;
@@ -103,7 +111,6 @@ async function scrapeTweet(tweetUrl) {
         throw new Error(error.message);
     }
 }
-
 // Close driver
 async function closeDriver() {
     if (driver) {
