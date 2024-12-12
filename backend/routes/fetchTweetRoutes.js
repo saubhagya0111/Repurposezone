@@ -33,9 +33,9 @@ router.post('/api/fetch-tweet', async (req, res) => {
 
         console.log('Scraped tweet data:', scrapedTweet);
 
-        // Extract tweetId and author from the URL
+        // Regex to extract tweetId and author from both twitter.com and x.com
         const tweetIdMatch = tweetUrl.match(/\/status\/(\d+)/);
-        const authorMatch = tweetUrl.match(/twitter\.com\/([^/]+)\//);
+        const authorMatch = tweetUrl.match(/(?:twitter\.com|x\.com)\/([^/]+)\//);
 
         if (!tweetIdMatch || !authorMatch) {
             return res.status(400).json({ error: 'Invalid Tweet URL format' });
@@ -72,6 +72,5 @@ router.post('/api/fetch-tweet', async (req, res) => {
         });
     }
 });
-
 
 module.exports = router;
