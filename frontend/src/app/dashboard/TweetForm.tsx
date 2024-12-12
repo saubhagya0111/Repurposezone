@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from "next/image";
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface TweetData {
@@ -77,7 +78,7 @@ try {
             <div>
               <h4 className="font-semibold mt-2">Media:</h4>
               {tweetData.media.map((url, index) => (
-                <img
+                <Image
                   key={index}
                   src={url}
                   alt={`Media ${index + 1}`}
