@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import api from "@/app/utils/api";
 import TweetForm from "./TweetForm";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function Dashboard() {
   const [userData, setUserData] = useState([]);

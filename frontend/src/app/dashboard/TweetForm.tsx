@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface TweetData {
   text: string;
@@ -31,8 +31,12 @@ try {
   if (!response.ok) throw new Error(data.error || "Failed to fetch tweet");
 
   setTweetData(data.tweet);
-} catch (err: any) {
-  setError(err.message);
+} catch (err: unknown) {
+  if (err instanceof Error) {
+    console.error(err.message);
+  } else {
+    console.error("An unknown error occurred");
+  }
 }
   };
 
