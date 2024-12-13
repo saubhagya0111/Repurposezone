@@ -8,7 +8,10 @@ const healthCheckRoutes = require('./routes/healthCheck');
 const scrapeRoutes = require('./routes/scrapeRoutes');
 const passport = require('./config/passport');
 const session = require('express-session');
-const fetchTweetRoutes = require('./routes/fetchTweetRoutes');
+const fetchTweetRoutes = require('./routes/fetchTweetRoutes'); const contentRoutes = require("./routes/contentRoutes");
+const testRoutes = require('./routes/testRoutes');
+
+
 
 const app = express();
 connectDB()
@@ -31,6 +34,8 @@ app.use(passport.session());
 // Routes
 app.use('/', authRoutes);
 app.use(protectedRoutes);
+app.use("/api/content", contentRoutes);
+app.use('/api', testRoutes);
 app.use(fetchTweetRoutes);
 app.use('/api', healthCheckRoutes);
 app.use('/api/scrape', scrapeRoutes);

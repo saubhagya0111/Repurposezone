@@ -14,7 +14,7 @@ const TweetSchema = new mongoose.Schema(
         media: [String], // Array of media URLs (if any)
         author: {
             type: String,
-            required: true,
+            required: false,
         },
         createdAt: {
             type: Date,

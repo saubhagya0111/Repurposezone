@@ -83,6 +83,9 @@ try {
                   src={url}
                   alt={`Media ${index + 1}`}
                   className="mt-2 w-64"
+                  width={300}
+                  height={200}
+                  layout="intrinsic" // Automatically adjust
                 />
               ))}
             </div>

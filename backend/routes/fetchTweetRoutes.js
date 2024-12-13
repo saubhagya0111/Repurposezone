@@ -63,7 +63,7 @@ router.post('/api/fetch-tweet', async (req, res) => {
             tweetId,
             text: scrapedTweet.text,
             media: scrapedTweet.media || [],
-            author: scrapedTweet.author || '@unknown',
+            // author: scrapedTweet.author || '@unknown',
             createdAt: scrapedTweet.timestamp,
         });
 
