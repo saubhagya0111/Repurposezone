@@ -10,6 +10,7 @@ const passport = require('./config/passport');
 const session = require('express-session');
 const fetchTweetRoutes = require('./routes/fetchTweetRoutes'); const contentRoutes = require("./routes/contentRoutes");
 const testRoutes = require('./routes/testRoutes');
+const twitterRoutes = require('./routes/twitterRoutes');
 
 
 
@@ -39,6 +40,7 @@ app.use('/api', testRoutes);
 app.use(fetchTweetRoutes);
 app.use('/api', healthCheckRoutes);
 app.use('/api/scrape', scrapeRoutes);
+app.use('/api/twitter', twitterRoutes);
 app.get('/', (req, res) => {
     res.send('Backend is running');
 });
