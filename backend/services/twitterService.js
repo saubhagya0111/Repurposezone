@@ -12,7 +12,7 @@ const fetchTweetsFromUser = async (username) => {
         // Query parameters for the Twitter API
         const params = {
             query: `from:${username}`, // Filter tweets from the specific user
-            max_results: 10, // Fetch up to 10 recent tweets
+            max_results: 1, // Fetch up to 10 recent tweets
             "tweet.fields": "created_at,public_metrics,text", // Include additional fields
         };
 
