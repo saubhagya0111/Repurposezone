@@ -18,68 +18,68 @@ setInterval(() => {
     }
 }, 60000); // Clean every 60 seconds
 
-router.post('/api/fetch-tweet', async (req, res) => {
-    try {
-        const { tweetUrl } = req.body;
+// router.post('/api/fetch-tweet', async (req, res) => {
+//     try {
+//         const { tweetUrl } = req.body;
 
-        if (!tweetUrl) {
-            return res.status(400).json({ error: 'Tweet URL is required' });
-        }
+//         if (!tweetUrl) {
+//             return res.status(400).json({ error: 'Tweet URL is required' });
+//         }
 
-        // Extract Tweet ID
-        const tweetIdMatch = tweetUrl.match(/\/status\/(\d+)/);
-        if (!tweetIdMatch) {
-            return res.status(400).json({ error: 'Invalid Tweet URL format' });
-        }
-        const tweetId = tweetIdMatch[1];
+//         // Extract Tweet ID
+//         const tweetIdMatch = tweetUrl.match(/\/status\/(\d+)/);
+//         if (!tweetIdMatch) {
+//             return res.status(400).json({ error: 'Invalid Tweet URL format' });
+//         }
+//         const tweetId = tweetIdMatch[1];
 
-        // Check the in-memory cache
-        if (tweetCache.has(tweetId)) {
-            console.log('Cache hit for tweet:', tweetId);
-            return res.status(200).json({
-                message: 'Tweet fetched from cache',
-                tweet: tweetCache.get(tweetId).data,
-            });
-        }
+//         // Check the in-memory cache
+//         if (tweetCache.has(tweetId)) {
+//             console.log('Cache hit for tweet:', tweetId);
+//             return res.status(200).json({
+//                 message: 'Tweet fetched from cache',
+//                 tweet: tweetCache.get(tweetId).data,
+//             });
+//         }
 
-        console.log('Cache miss for tweet:', tweetId);
+//         console.log('Cache miss for tweet:', tweetId);
 
-        // Check MongoDB
-        const existingTweet = await Tweet.findOne({ tweetId });
-        if (existingTweet) {
-            // Store in cache and return
-            tweetCache.set(tweetId, { data: existingTweet, timestamp: Date.now() });
-            return res.status(200).json({ message: 'Tweet already saved', tweet: existingTweet });
-        }
+//         // Check MongoDB
+//         const existingTweet = await Tweet.findOne({ tweetId });
+//         if (existingTweet) {
+//             // Store in cache and return
+//             tweetCache.set(tweetId, { data: existingTweet, timestamp: Date.now() });
+//             return res.status(200).json({ message: 'Tweet already saved', tweet: existingTweet });
+//         }
 
-        // Fetch from scraper
-        const scrapedTweet = await scrapeTweet(tweetUrl);
-        if (!scrapedTweet || !scrapedTweet.text) {
-            return res.status(404).json({ error: 'Scraper failed to fetch the tweet' });
-        }
+//         // Fetch from scraper
+//         const scrapedTweet = await scrapeTweet(tweetUrl);
+//         if (!scrapedTweet || !scrapedTweet.text) {
+//             return res.status(404).json({ error: 'Scraper failed to fetch the tweet' });
+//         }
 
-        // Save to MongoDB
-        const newTweet = new Tweet({
-            tweetId,
-            text: scrapedTweet.text,
-            media: scrapedTweet.media || [],
-            // author: scrapedTweet.author || '@unknown',
-            createdAt: scrapedTweet.timestamp,
-        });
+//         // Save to MongoDB
+//         const newTweet = new Tweet({
+//             tweetId,
+//             text: scrapedTweet.text,
+//             media: scrapedTweet.media || [],
+//             // author: scrapedTweet.author || '@unknown',
+//             createdAt: scrapedTweet.timestamp,
+//         });
 
-        await newTweet.save();
+//         await newTweet.save();
 
-        // Save to cache
-        tweetCache.set(tweetId, { data: newTweet, timestamp: Date.now() });
+//         // Save to cache
+//         tweetCache.set(tweetId, { data: newTweet, timestamp: Date.now() });
 
-        res.status(201).json({ message: 'Tweet scraped and saved successfully', tweet: newTweet });
-    } catch (error) {
-        console.error('Error in /fetch-tweet:', error.stack || error.message);
-        res.status(500).json({
-            error: 'Internal server error',
-            details: error.message,
-        });
-    }
-});
+//         res.status(201).json({ message: 'Tweet scraped and saved successfully', tweet: newTweet });
+//     } catch (error) {
+//         console.error('Error in /fetch-tweet:', error.stack || error.message);
+//         res.status(500).json({
+//             error: 'Internal server error',
+//             details: error.message,
+//         });
+//     }
+// });
 
 module.exports = router;

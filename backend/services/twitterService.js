@@ -1,11 +1,17 @@
 const axios = require('axios');
-
+const mockTweets = require('../mockData/tweets.json');
+  
 /**
  * Fetch tweets from a specific user using Twitter API v2
  * @param {string} username - The Twitter username to fetch tweets from
  * @returns {Promise<Object>} - List of tweets with metadata
  */
+const USE_MOCK_DATA = process.env.USE_MOCK_DATA === 'true'; // Toggle mock data
 const fetchTweetsFromUser = async (username) => {
+    if (USE_MOCK_DATA) {
+        console.log("Using mock data for testing");
+        return mockTweets; // Return mock data
+    }
     try {
         const url = `https://api.twitter.com/2/tweets/search/recent`;
 
