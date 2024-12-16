@@ -29,6 +29,7 @@
     "passport": "^0.7.0",
     "passport-oauth": "^1.0.0",
     "passport-twitter": "^0.1.5",
+    "python-shell": "^5.0.0",
     "selenium-webdriver": "^4.27.0",
     "user-agents": "^1.1.384",
     "validator": "^13.12.0"

@@ -11,6 +11,7 @@ const session = require('express-session');
 const fetchTweetRoutes = require('./routes/fetchTweetRoutes'); const contentRoutes = require("./routes/contentRoutes");
 const testRoutes = require('./routes/testRoutes');
 const twitterRoutes = require('./routes/twitterRoutes');
+const videoRoutes = require('./routes/video');
 
 
 
@@ -41,6 +42,8 @@ app.use(fetchTweetRoutes);
 app.use('/api', healthCheckRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/twitter', twitterRoutes);
+app.use('/api', videoRoutes);   
+app.use("/videos", express.static("output"));
 app.get('/', (req, res) => {
     res.send('Backend is running');
 });
