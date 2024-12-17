@@ -1,13 +1,16 @@
 from manim import *
-import sys
+import os
+
+# Set output directory globally before initializing the scene
+config.media_dir = "./output"  # Redirect all output files to 'output'
 
 
 class TweetVideo(Scene):
     def construct(self):
-        # Get tweet text from command-line argument or use default
-        tweet_text = sys.argv[1] if len(sys.argv) > 1 else "Default Tweet Text"
+        # Get dynamic tweet text from environment variable
+        tweet_text = os.getenv("TWEET_TEXT", "Default Tweet Text")
 
-        # Display the text
+        # Create and display the text
         text = Text(tweet_text, font_size=64)
         self.play(Write(text))
         self.wait(2)

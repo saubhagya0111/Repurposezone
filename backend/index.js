@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const protectedRoutes = require('./routes/protectedRoutes');
 const connectDB = require('./db');
@@ -33,6 +34,9 @@ app.use(express.json());
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+// Log the static path for debugging
+console.log("Serving static files from:", path.join(__dirname, "output"));
 // Routes
 app.use('/', authRoutes);
 app.use(protectedRoutes);
@@ -43,7 +47,8 @@ app.use('/api', healthCheckRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/twitter', twitterRoutes);
 app.use('/api', videoRoutes);   
-app.use("/videos", express.static("output"));
+app.use("/videos", express.static(path.join(__dirname, "output")));
+
 app.get('/', (req, res) => {
     res.send('Backend is running');
 });
