@@ -133,3 +133,4 @@ tweetCache.json
 output*
 media*
 partial_movie_file_list.txt
+*.pyc
