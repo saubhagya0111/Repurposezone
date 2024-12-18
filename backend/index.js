@@ -47,7 +47,7 @@ app.use('/api', healthCheckRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/twitter', twitterRoutes);
 app.use('/api', videoRoutes);   
-app.use("/videos", express.static(path.join(__dirname, "output")));
+app.use("/videos", express.static("../"));
 
 app.get('/', (req, res) => {
     res.send('Backend is running');

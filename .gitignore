@@ -134,3 +134,6 @@ output*
 media*
 partial_movie_file_list.txt
 *.pyc
+*.mp4
+*.png
+*.jpg

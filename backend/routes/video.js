@@ -1,39 +1,53 @@
 const express = require("express");
 const { spawn } = require("child_process");
 const path = require("path");
+const fs = require("fs");
+
 const router = express.Router();
 
+// Route: Generate TikTok-style Video
 router.post("/generate-video", (req, res) => {
-    const { tweetText, userName, userHandle, template } = req.body;
+    const { tweet_text, user_name, user_handle, profile_url } = req.body;
 
-    if (!tweetText || !template) {
-        return res.status(400).json({ error: "Tweet text and template are required." });
+    if (!tweet_text || !user_name || !user_handle || !profile_url) {
+        return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Set environment variables for Manim
-    const env = {
-        ...process.env,
-        TWEET_TEXT: tweetText,
-        USER_NAME: userName || "Unknown User",
-        USER_HANDLE: userHandle || "@unknown",
-    };
+    // Pass inputs as environment variables
+    process.env.TWEET_TEXT = tweet_text;
+    process.env.USER_NAME = user_name;
+    process.env.USER_HANDLE = user_handle;
+    process.env.PROFILE_URL = profile_url;
 
-    // Define path to template files
-    const templateDir = path.join(__dirname, "../templates");
-    const templateFile = template === "detailed" ? "detailed_template.py" : "simple_template.py";
+    const scriptPath = path.join(__dirname, "../scripts/generate_tiktok_video.py");
 
-    // Run Manim command with full path to template
-    const manimProcess = spawn("manim", ["-pql", path.join(templateDir, templateFile), "TweetVideo"], { env });
+    // Run the Python script
+    const pythonProcess = spawn("python", [scriptPath]);
 
-    manimProcess.stdout.on("data", (data) => console.log(`Manim: ${data}`));
-    manimProcess.stderr.on("data", (data) => console.error(`Manim Error: ${data}`));
+    pythonProcess.stdout.on("data", (data) => console.log(`Python: ${data}`));
+    pythonProcess.stderr.on("data", (data) => console.error(`Error: ${data}`));
 
-    manimProcess.on("close", (code) => {
+    pythonProcess.on("close", (code) => {
         if (code === 0) {
-            const videoPath = "/videos/TweetVideo.mp4";
-            res.json({ success: true, videoPath });
+            const baseDir = path.resolve(__dirname, "../"); // Correct base directory
+            const safeUsername = user_name.replace(/[^a-zA-Z0-9]/g, "_");
+            console.log("Scanning directory:", baseDir);
+
+            // Find the video file matching the username
+            const videoFile = fs.readdirSync(baseDir).find(file =>
+                file.startsWith(safeUsername) && file.endsWith(".mp4")
+            );
+
+            if (videoFile) {
+                return res.status(200).json({
+                    message: "Video generated successfully",
+                    video_url: `/videos/${videoFile}`
+                });
+            } else {
+                return res.status(500).json({ error: "Video file not found" });
+            }
         } else {
-            res.status(500).json({ error: "Video generation failed." });
+            return res.status(500).json({ error: "Video generation failed" });
         }
     });
 });
