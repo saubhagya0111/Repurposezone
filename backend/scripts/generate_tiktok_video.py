@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from datetime import datetime
 from gtts import gTTS
+from pydub import AudioSegment
 import subprocess
 
 
@@ -16,48 +17,48 @@ def text_to_speech(tweet_text, output_audio_path):
     return output_audio_path
 
 
+def get_audio_duration(audio_path):
+    audio = AudioSegment.from_file(audio_path)
+    return len(audio) / 1000  # Duration in seconds
+
+
 # Combine Video and Audio
 def combine_audio_video(input_video, input_audio, output_video):
     command = [
         "ffmpeg",
-        "-y",
+        "-y",  # Overwrite output
         "-i",
-        input_video,
+        input_video,  # Input video
         "-i",
-        input_audio,
+        input_audio,  # Input audio
+        "-map",
+        "0:v",  # Map video
+        "-map",
+        "1:a",  # Map audio
         "-c:v",
-        "copy",
+        "copy",  # Copy video codec
         "-c:a",
-        "aac",
-        "-strict",
-        "experimental",
-        "-shortest",
+        "aac",  # Encode audio as AAC
+        "-b:a",
+        "128k",  # Audio bitrate
+        "-ar",
+        "48000",  # Audio sampling rate
+        "-shortest",  # Match duration of the shortest input
         output_video,
     ]
-    result = subprocess.run(
-        command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True
-    )
-    print("FFmpeg output:", result.stdout)
-    print("FFmpeg errors:", result.stderr)
 
-    command = [
-        "ffmpeg",
-        "-i",
-        input_video,
-        "-i",
-        input_audio,
-        "-map",
-        "0:v",
-        "-map",
-        "1:a",
-        "-shortest",
-        "-c:v",
-        "copy",
-        "-c:a",
-        "aac",
-        output_video,
-    ]
-    subprocess.run(command, check=True)
+    # Run the FFmpeg command
+    result = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+
+    # Log the FFmpeg output for debugging
+    print("FFmpeg Output:", result.stdout)
+    print("FFmpeg Errors:", result.stderr)
+
+    # Raise an exception if the command fails
+    if result.returncode != 0:
+        raise RuntimeError(f"FFmpeg failed with return code {result.returncode}")
 
 
 # Clean the username for directory naming
@@ -66,7 +67,7 @@ def clean_username(username):
 
 
 # Input from ENV variables
-TWEET_TEXT = os.getenv("TWEET_TEXT", "Yeah the audio works its generated and works on the syshhhtumm")
+TWEET_TEXT = os.getenv("TWEET_TEXT", "is a phrase that reflects the pride and glory of India, a land of diverse cultures, rich history, and immense talent. Known for its unity in diversity, India is home to over a billion people who speak different languages, follow various traditions, and practice multiple religions, yet live harmoniously. It is the birthplace of great leaders, thinkers, and innovators who have shaped the world. From the snow-clad Himalayas to the serene beaches, India’s landscapes are breathtaking. Its contributions in science, art, and spirituality inspire millions globally. Truly, India is incredible, and Mera Bharat Mahan says it all")
 USER_NAME = os.getenv("USER_NAME", "John Doe")
 USER_HANDLE = os.getenv("USER_HANDLE", "@johndoe")
 PROFILE_URL = os.getenv(
@@ -142,9 +143,13 @@ def wrap_text(text, max_length=35):
 
 
 # Generate Video with FFmpeg
-def generate_video():
-    ffmpeg.input(OUTPUT_IMAGE, loop=1, t=5).output(
-        OUTPUT_VIDEO, vf="scale=1080:1920", r=30
+def generate_video(audio_path, output_image, output_video):
+    # Get the audio duration
+    audio_duration = get_audio_duration(audio_path)
+
+    # Extend or loop the video template to match audio duration
+    ffmpeg.input(output_image, loop=1, t=audio_duration).output(
+        output_video, vf="scale=1080:1920", r=30
     ).run()
 
 
@@ -157,7 +162,7 @@ if __name__ == "__main__":
     print(f"Audio generated at: {audio_path}")
 
     # Step 3: Generate Video
-    generate_video()
+    generate_video(audio_path, OUTPUT_IMAGE, OUTPUT_VIDEO)
     print(f"Video generated successfully: {OUTPUT_VIDEO}")
 
     # Step 4: Combine Audio and Video
